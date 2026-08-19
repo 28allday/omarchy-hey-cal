@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "nosignal.hey-cal",
+  "name": "HEY",
+  "version": "0.1.0",
+  "author": "Gavin Nugent",
+  "license": "MIT",
+  "description": "One HEY panel: the top of the Imbox, with the next few calendar events pinned underneath. Summon with: omarchy-shell shell toggle nosignal.hey-cal",
+  "kinds": ["panel", "bar-widget"],
+  "entryPoints": {
+    "panel": "Panel.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "HEY",
+    "description": "Bar icon that toggles the combined HEY mail + agenda panel",
+    "category": "Productivity",
+    "defaultSection": "right",
+    "allowMultiple": false
+  }
+}
