@@ -37,8 +37,11 @@ gets out of the way.
   hey auth login  # browser-based OAuth
   ```
 
-  Don't reach for the AUR `hey-cli` package: it pins a `v0.0.1` tag that does
-  not exist upstream, so the download 404s.
+  Two things to avoid. The AUR `hey-cli` package pins a `v0.0.1` tag that does
+  not exist upstream, so its download 404s. And `hey` is not a unique name —
+  `hey-bin` and `hey-git` package an **HTTP load generator** that also installs
+  a binary called `hey`. If that one is on your `PATH`, this panel finds it,
+  fails to get mail out of it, and tells you so.
 
   `hey auth status` should be happy before you open the panel. If it isn't, the
   panel tells you so rather than showing an empty list.
@@ -50,6 +53,10 @@ its JSON can move under us. This plugin was built and verified against build
 the first thing to suspect.
 
 ## Install
+
+Installing the plugin does **not** install `hey-cli` — a plugin install is a git
+clone, so it cannot place binaries or pull packages. Set the CLI up first, or
+the panel will open and tell you it can't find it.
 
 ```sh
 omarchy plugin add https://github.com/28allday/omarchy-hey-cal.git

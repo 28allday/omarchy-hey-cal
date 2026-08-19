@@ -248,6 +248,11 @@ Item {
   // Markers guard missing tools and a dead HEY session.
   readonly property string mailScript: [
     "command -v jq >/dev/null 2>&1 || { echo '##NOJQ'; exit 0; }",
+    // `hey` is not a unique name — the HTTP load generator (packaged as
+    // hey-bin / hey-git) installs a binary called `hey` too, and would sail
+    // through a bare `command -v`. Nothing here can safely tell them apart by
+    // string-matching help text, so detection stays simple and the error note
+    // names the possibility instead.
     "command -v hey >/dev/null 2>&1 || { echo '##NOHEY'; exit 0; }",
     "box=\"$(hey box imbox --json 2>/dev/null)\"",
     "printf '%s' \"$box\" | jq -e '.ok == true and (.data | type == \"object\")' >/dev/null 2>&1 || { echo '##ERR'; exit 0; }",
@@ -908,7 +913,7 @@ Item {
             text: !root.mailLoaded ? "Fetching mail…"
                 : root.mailError === "nojq" ? "jq is required for this panel"
                 : root.mailError === "nohey" ? "hey CLI not found — github.com/basecamp/hey-cli"
-                : root.mailError === "err" ? "Couldn't reach HEY — try: hey auth status"
+                : root.mailError === "err" ? "Couldn't reach HEY — try `hey auth status`. If the `hey` on your PATH is the HTTP load generator of the same name, that's the problem."
                 : "Imbox is empty"
             color: root.mailError !== "" && root.mailLoaded ? root.urgent : root.foreground
             opacity: root.mailError !== "" && root.mailLoaded ? 1.0 : 0.6
