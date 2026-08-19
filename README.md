@@ -23,10 +23,31 @@ gets out of the way.
 ## Requirements
 
 - **Omarchy 4** (the `omarchy-shell` desktop).
-- **[hey-cli](https://github.com/basecamp/hey-cli)**, signed in — `hey auth
-  status` should be happy. The plugin never sees your password or token; it
-  asks the `hey` command for data the same way you would at a prompt.
+- **[hey-cli](https://github.com/basecamp/hey-cli)** — HEY's own command-line
+  client, from 37signals. The plugin never sees your password or token; it asks
+  the `hey` command for data the same way you would at a prompt.
+
+  There are no published binaries, so it is a build from source (Go 1.26+):
+
+  ```sh
+  git clone https://github.com/basecamp/hey-cli
+  cd hey-cli
+  mise install    # Go 1.26
+  make install    # builds and installs /usr/local/bin/hey
+  hey auth login  # browser-based OAuth
+  ```
+
+  Don't reach for the AUR `hey-cli` package: it pins a `v0.0.1` tag that does
+  not exist upstream, so the download 404s.
+
+  `hey auth status` should be happy before you open the panel. If it isn't, the
+  panel tells you so rather than showing an empty list.
 - **jq**, which is almost certainly already installed.
+
+`hey-cli` publishes no tags or releases, so there is no version to pin to and
+its JSON can move under us. This plugin was built and verified against build
+`22aeea7`. If a fetch ever comes back wrong after you update the CLI, that is
+the first thing to suspect.
 
 ## Install
 
