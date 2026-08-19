@@ -57,13 +57,13 @@ Item {
   property var shown: []
   property int unreadCount: 0
   property bool mailLoaded: false
-  property string mailError: ""   // "", "nojq", "nohey", "err"
+  property string mailError: ""   // "", "nojq", "nohey", "wronghey", "err"
 
   // Agenda state. events: the next eventLimit upcoming events, soonest first.
   // [{ day, time, title, cal, allDay, url }]
   property var events: []
   property bool calLoaded: false
-  property string calError: ""    // "", "nojq", "nohey", "err"
+  property string calError: ""    // "", "nojq", "nohey", "wronghey", "err"
 
   readonly property bool truncated: root.mail.length > root.shown.length
 
@@ -248,12 +248,16 @@ Item {
   // Markers guard missing tools and a dead HEY session.
   readonly property string mailScript: [
     "command -v jq >/dev/null 2>&1 || { echo '##NOJQ'; exit 0; }",
-    // `hey` is not a unique name — the HTTP load generator (packaged as
-    // hey-bin / hey-git) installs a binary called `hey` too, and would sail
-    // through a bare `command -v`. Nothing here can safely tell them apart by
-    // string-matching help text, so detection stays simple and the error note
-    // names the possibility instead.
     "command -v hey >/dev/null 2>&1 || { echo '##NOHEY'; exit 0; }",
+    // Only Basecamp's hey-cli will do. `hey` is not a unique name — hey-bin and
+    // hey-git package an unrelated HTTP load generator that also installs a
+    // binary called `hey`, and it would sail through a bare `command -v`.
+    // So identify the binary before handing it any arguments: passing
+    // `box imbox` to a load generator is not a mistake worth making. The test
+    // looks for the subcommands this actually calls rather than for the
+    // tagline, so it survives upstream rewording its own help text.
+    "help=\"$(hey --help 2>&1)\"",
+    "printf '%s' \"$help\" | grep -qw 'box' || { echo '##WRONGHEY'; exit 0; }",
     "box=\"$(hey box imbox --json 2>/dev/null)\"",
     "printf '%s' \"$box\" | jq -e '.ok == true and (.data | type == \"object\")' >/dev/null 2>&1 || { echo '##ERR'; exit 0; }",
     "printf '%s' \"$box\" | jq -c '(.data.postings // [])[] | {id: (.id | tostring), subject: (if ((.name // \"\") == \"\") then \"(no subject)\" else .name end), from: (.creator.name // .creator.email_address // \"Unknown\"), summary: ((.summary // \"\") | .[0:160]), seen: (.seen == true), at: (.active_at // .created_at // \"\"), count: (.visible_entry_count // 1), url: (.app_url // \"\")}' 2>/dev/null"
@@ -269,6 +273,7 @@ Item {
       if (line === "") continue
       if (line === "##NOJQ") { error = "nojq"; continue }
       if (line === "##NOHEY") { error = "nohey"; continue }
+      if (line === "##WRONGHEY") { error = "wronghey"; continue }
       if (line === "##ERR") { error = "err"; continue }
       try {
         var j = JSON.parse(line)
@@ -305,6 +310,10 @@ Item {
   readonly property string calScript: [
     "command -v jq >/dev/null 2>&1 || { echo '##NOJQ'; exit 0; }",
     "command -v hey >/dev/null 2>&1 || { echo '##NOHEY'; exit 0; }",
+    // Same identity gate as the mail half — see the note there.
+    "help=\"$(hey --help 2>&1)\"",
+    "printf '%s' \"$help\" | grep -qw 'calendars' || { echo '##WRONGHEY'; exit 0; }",
+    "printf '%s' \"$help\" | grep -qw 'recordings' || { echo '##WRONGHEY'; exit 0; }",
     "cals=\"$(hey calendars --json 2>/dev/null)\"",
     "printf '%s' \"$cals\" | jq -e '.ok == true and (.data | type == \"array\")' >/dev/null 2>&1 || { echo '##ERR'; exit 0; }",
     "printf '%s' \"$cals\" | jq -r '.data[] | [(.id|tostring), (.name // \"Personal\")] | @tsv' | while IFS=\"$(printf '\\t')\" read -r id name; do",
@@ -339,6 +348,7 @@ Item {
       if (line === "") continue
       if (line === "##NOJQ") { error = "nojq"; continue }
       if (line === "##NOHEY") { error = "nohey"; continue }
+      if (line === "##WRONGHEY") { error = "wronghey"; continue }
       if (line === "##ERR") { error = "err"; continue }
       try {
         var j = JSON.parse(line)
@@ -913,7 +923,8 @@ Item {
             text: !root.mailLoaded ? "Fetching mail…"
                 : root.mailError === "nojq" ? "jq is required for this panel"
                 : root.mailError === "nohey" ? "hey CLI not found — github.com/basecamp/hey-cli"
-                : root.mailError === "err" ? "Couldn't reach HEY — try `hey auth status`. If the `hey` on your PATH is the HTTP load generator of the same name, that's the problem."
+                : root.mailError === "wronghey" ? "The `hey` on your PATH isn't HEY's CLI — most likely the HTTP load generator of the same name. Install github.com/basecamp/hey-cli."
+                : root.mailError === "err" ? "Couldn't reach HEY — try: hey auth status"
                 : "Imbox is empty"
             color: root.mailError !== "" && root.mailLoaded ? root.urgent : root.foreground
             opacity: root.mailError !== "" && root.mailLoaded ? 1.0 : 0.6
@@ -1013,6 +1024,7 @@ Item {
             text: !root.calLoaded ? "Fetching events…"
                 : root.calError === "nojq" ? "jq is required for the agenda"
                 : root.calError === "nohey" ? "hey CLI not found — github.com/basecamp/hey-cli"
+                : root.calError === "wronghey" ? "That `hey` isn't HEY's CLI"
                 : root.calError === "err" ? "Couldn't reach HEY Calendar"
                 : "Nothing else on the calendar"
             color: root.calError !== "" && root.calLoaded ? root.urgent : root.foreground

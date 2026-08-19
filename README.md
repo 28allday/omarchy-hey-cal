@@ -40,8 +40,9 @@ gets out of the way.
   Two things to avoid. The AUR `hey-cli` package pins a `v0.0.1` tag that does
   not exist upstream, so its download 404s. And `hey` is not a unique name —
   `hey-bin` and `hey-git` package an **HTTP load generator** that also installs
-  a binary called `hey`. If that one is on your `PATH`, this panel finds it,
-  fails to get mail out of it, and tells you so.
+  a binary called `hey`. Only Basecamp's will do here, and the panel checks: it
+  identifies the binary before passing it any arguments, and says plainly if the
+  `hey` it found is the wrong one.
 
   `hey auth status` should be happy before you open the panel. If it isn't, the
   panel tells you so rather than showing an empty list.
