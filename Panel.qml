@@ -92,7 +92,7 @@ Item {
 
   // Mail row geometry — deterministic so keyboard scrolling can keep the
   // selection visible without probing delegate positions. Two text lines per
-  // row, same proportions as the claude-sessions list.
+  // row: a subject line and a dimmer sender/snippet line beneath it.
   readonly property int rowPadV: Style.spacing.lg
   readonly property int rowPadH: Style.spacing.lg
   readonly property int rowGap: Style.spacing.xs
