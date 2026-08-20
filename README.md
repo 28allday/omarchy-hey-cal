@@ -27,36 +27,49 @@ gets out of the way.
   client, from 37signals. The plugin never sees your password or token; it asks
   the `hey` command for data the same way you would at a prompt.
 
-  There are no published binaries, so it is a build from source (Go 1.26+).
-  `hey-cli` publishes no tags and no releases, so `main` is a moving target —
-  check out the exact commit this plugin was verified against rather than
-  whatever `main` happens to be:
+  37signals ships official release binaries as of `v0.1.1` (2026-08-20).
+  Install the release this plugin was verified against, checked against the
+  SHA-256 upstream publishes for it:
+
+  ```sh
+  cd "$(mktemp -d)" &&
+    curl -fsSLO https://github.com/basecamp/hey-cli/releases/download/v0.1.1/hey_0.1.1_linux_amd64.tar.gz &&
+    echo "3510a7bc066446f2f72411d50c7915cbec1d9aff53c31e50e77675dba8412932  hey_0.1.1_linux_amd64.tar.gz" | sha256sum -c - &&
+    tar xzf hey_0.1.1_linux_amd64.tar.gz hey &&
+    sudo install -m755 hey /usr/local/bin/hey
+  ```
+
+  On arm64, swap both `amd64`s for `arm64` and the checksum for
+  `7087a5957d5e67fe54cbdf2ccb4884d21e9d44f2a9445e7ef210976903cc61e0`. It is
+  one `&&` chain on purpose: a failed download or a checksum mismatch means
+  nothing gets installed. Prefer building from source? Use the tag, not
+  `main`:
 
   ```sh
   git clone https://github.com/basecamp/hey-cli &&
     cd hey-cli &&
-    git checkout --detach 22aeea730eb28a70ccbc1701027d4883715914a9 &&
+    git checkout --detach c0d3441894f1e04eb6d5bf2c0d71dea15754931c &&
     mise install &&
     make install
   ```
 
-  It is one `&&` chain on purpose: if the checkout fails, nothing goes on to
-  build whatever `main` happens to be. `mise install` picks up Go 1.26.1 from
-  the repo's own `.mise.toml`, and `make install` ends in `sudo install`, so
-  expect a password prompt. Then sign in — browser-based OAuth, no password
-  ever reaches this plugin:
+  (`c0d3441` is the `v0.1.1` tag; `mise install` provides the Go toolchain
+  from the repo's own `.mise.toml`, and `make install` ends in
+  `sudo install`.) Either way, sign in afterwards — browser-based OAuth, no
+  password ever reaches this plugin:
 
   ```sh
   hey auth login
   ```
 
-  A newer commit will very likely work — but the JSON this plugin parses is
-  unversioned, so nothing upstream signals a breaking change. Building the
-  pinned commit means you get the shape that was tested. If you'd rather track
-  `main`, do, and read the note at the end of this section first.
+  A newer release will very likely work — but the JSON this plugin parses is
+  unversioned, so nothing upstream signals a breaking change. Installing the
+  verified release means you get the shape that was tested. If you'd rather
+  track `main`, do, and read the note at the end of this section first.
 
-  Two things to avoid. The AUR `hey-cli` package pins a `v0.0.1` tag that does
-  not exist upstream, so its download 404s. And `hey` is not a unique name —
+  Two things to avoid. The AUR `hey-cli` package still pins a `v0.0.1` tag
+  that does not exist upstream, so its download 404s (checked 2026-08-20 —
+  `v0.1.1` may well fix this soon). And `hey` is not a unique name —
   `hey-bin` and `hey-git` package an **HTTP load generator** that also installs
   a binary called `hey`. Only Basecamp's will do here, and the panel checks: it
   identifies the binary before passing it any arguments, and says plainly if the
@@ -67,9 +80,10 @@ gets out of the way.
 - **jq**, which is almost certainly already installed.
 
 Everything this plugin parses — `.data.postings`, `.data["Calendar::Event"]`,
-`app_url`, `edit_url` — was verified against commit
-[`22aeea7`](https://github.com/basecamp/hey-cli/commit/22aeea730eb28a70ccbc1701027d4883715914a9)
-and nothing else. The parser is defensive, so a shape change degrades to an
+`app_url`, `edit_url` — was verified against the
+[`v0.1.1`](https://github.com/basecamp/hey-cli/releases/tag/v0.1.1) release
+binary (and against commit `22aeea7`, whose output is shape-identical) and
+nothing else. The parser is defensive, so a shape change degrades to an
 error note rather than a broken panel, but it can't self-diagnose: if a fetch
 comes back wrong after you move the CLI forward, that is the first thing to
 suspect.
@@ -188,7 +202,7 @@ Worth knowing before you install anything that can read your mail:
   plugin's read-only fetches can cause `hey-cli` to rewrite that file. If the
   plaintext fallback bothers you, make sure a Secret Service keyring is running
   before `hey auth login` — `hey doctor` reports which store is in use.
-  (Behaviour verified against the pinned `hey-cli` build, `22aeea7`.)
+  (Behaviour verified in the source of the `v0.1.1` release, same as `22aeea7`.)
 - **It writes one line to your shell config.** The first time the panel opens it
   adds `{"id": "nosignal.hey-cal"}` to the `plugins[]` array in
   `~/.config/omarchy/shell.json`, if it is not already there. This is what keeps
