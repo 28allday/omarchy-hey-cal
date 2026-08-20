@@ -1,4 +1,4 @@
-# HEY
+# HEY-CAL
 
 Your HEY Imbox and your next few calendar events, in one panel on your Omarchy
 desktop. Press the shortcut, glance, press `↵` to open whatever you were
