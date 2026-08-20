@@ -33,12 +33,21 @@ gets out of the way.
   whatever `main` happens to be:
 
   ```sh
-  git clone https://github.com/basecamp/hey-cli
-  cd hey-cli
-  git checkout --detach 22aeea730eb28a70ccbc1701027d4883715914a9
-  mise install    # Go 1.26
-  make install    # builds, then sudo-installs /usr/local/bin/hey
-  hey auth login  # browser-based OAuth
+  git clone https://github.com/basecamp/hey-cli &&
+    cd hey-cli &&
+    git checkout --detach 22aeea730eb28a70ccbc1701027d4883715914a9 &&
+    mise install &&
+    make install
+  ```
+
+  It is one `&&` chain on purpose: if the checkout fails, nothing goes on to
+  build whatever `main` happens to be. `mise install` picks up Go 1.26.1 from
+  the repo's own `.mise.toml`, and `make install` ends in `sudo install`, so
+  expect a password prompt. Then sign in — browser-based OAuth, no password
+  ever reaches this plugin:
+
+  ```sh
+  hey auth login
   ```
 
   A newer commit will very likely work — but the JSON this plugin parses is
