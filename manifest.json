@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "nosignal.hey-cal",
-  "name": "HEY",
+  "name": "HEY-CAL",
   "version": "0.1.0",
   "author": "Gavin Nugent",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "HEY",
+    "displayName": "HEY-CAL",
     "description": "Bar icon that toggles the combined HEY mail + agenda panel",
     "category": "Productivity",
     "defaultSection": "right",

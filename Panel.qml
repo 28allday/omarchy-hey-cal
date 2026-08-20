@@ -877,7 +877,7 @@ Item {
             id: titleText
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            text: "󰇮  HEY"
+            text: "󰇮  HEY-CAL"
             color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.heading
