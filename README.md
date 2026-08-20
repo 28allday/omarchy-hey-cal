@@ -27,15 +27,24 @@ gets out of the way.
   client, from 37signals. The plugin never sees your password or token; it asks
   the `hey` command for data the same way you would at a prompt.
 
-  There are no published binaries, so it is a build from source (Go 1.26+):
+  There are no published binaries, so it is a build from source (Go 1.26+).
+  `hey-cli` publishes no tags and no releases, so `main` is a moving target —
+  check out the exact commit this plugin was verified against rather than
+  whatever `main` happens to be:
 
   ```sh
   git clone https://github.com/basecamp/hey-cli
   cd hey-cli
+  git checkout --detach 22aeea730eb28a70ccbc1701027d4883715914a9
   mise install    # Go 1.26
-  make install    # builds and installs /usr/local/bin/hey
+  make install    # builds, then sudo-installs /usr/local/bin/hey
   hey auth login  # browser-based OAuth
   ```
+
+  A newer commit will very likely work — but the JSON this plugin parses is
+  unversioned, so nothing upstream signals a breaking change. Building the
+  pinned commit means you get the shape that was tested. If you'd rather track
+  `main`, do, and read the note at the end of this section first.
 
   Two things to avoid. The AUR `hey-cli` package pins a `v0.0.1` tag that does
   not exist upstream, so its download 404s. And `hey` is not a unique name —
@@ -48,10 +57,13 @@ gets out of the way.
   panel tells you so rather than showing an empty list.
 - **jq**, which is almost certainly already installed.
 
-`hey-cli` publishes no tags or releases, so there is no version to pin to and
-its JSON can move under us. This plugin was built and verified against build
-`22aeea7`. If a fetch ever comes back wrong after you update the CLI, that is
-the first thing to suspect.
+Everything this plugin parses — `.data.postings`, `.data["Calendar::Event"]`,
+`app_url`, `edit_url` — was verified against commit
+[`22aeea7`](https://github.com/basecamp/hey-cli/commit/22aeea730eb28a70ccbc1701027d4883715914a9)
+and nothing else. The parser is defensive, so a shape change degrades to an
+error note rather than a broken panel, but it can't self-diagnose: if a fetch
+comes back wrong after you move the CLI forward, that is the first thing to
+suspect.
 
 ## Install
 
