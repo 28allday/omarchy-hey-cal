@@ -132,7 +132,9 @@ touch:
   `bindings.lua`. Delete it or it will toggle a panel that is no longer there.
 - **`hey-cli`**, which you installed separately and may well be using outside
   this plugin. `sudo rm /usr/local/bin/hey` if you want it gone, and
-  `hey auth logout` first to drop its keyring entry.
+  `hey auth logout` first to drop its stored session — the keyring entry, or
+  `~/.config/hey-cli/credentials.json` on a box where it fell back to the
+  plaintext file.
 
 ## Using it
 
@@ -174,8 +176,17 @@ Worth knowing before you install anything that can read your mail:
   does not do.
 - **It reads, it never writes.** The only commands it runs are `hey box imbox`,
   `hey calendars` and `hey recordings`, all with `--json`.
-- **It stores nothing.** No cache, no mail on disk, no credentials — your HEY
-  session lives in `hey-cli`'s own keyring entry and is never read here.
+- **It stores nothing itself.** No cache, no mail on disk, no credentials —
+  your HEY session belongs to `hey-cli` and is never read here. Where that
+  session actually lives depends on your machine: `hey-cli` keeps it in the
+  system keyring when one is available, but **falls back to a plaintext file**,
+  `~/.config/hey-cli/credentials.json` (created `0600`, with a warning on
+  stderr), when no keyring is reachable or `HEY_NO_KEYRING` is set. And because
+  every `hey` command refreshes an expiring token automatically, even this
+  plugin's read-only fetches can cause `hey-cli` to rewrite that file. If the
+  plaintext fallback bothers you, make sure a Secret Service keyring is running
+  before `hey auth login` — `hey doctor` reports which store is in use.
+  (Behaviour verified against the pinned `hey-cli` build, `22aeea7`.)
 - **It writes one line to your shell config.** The first time the panel opens it
   adds `{"id": "nosignal.hey-cal"}` to the `plugins[]` array in
   `~/.config/omarchy/shell.json`, if it is not already there. This is what keeps
