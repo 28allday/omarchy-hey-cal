@@ -76,6 +76,43 @@ o.bind("SUPER + ALT + H", "HEY", "omarchy-shell shell toggle nosignal.hey-cal")
 
 Bindings are picked up as soon as you save the file.
 
+## Removing it
+
+To take the icon out of the bar but keep the plugin installed:
+
+```sh
+omarchy plugin disable nosignal.hey-cal
+```
+
+To remove it altogether:
+
+```sh
+omarchy plugin remove nosignal.hey-cal
+```
+
+That deletes the clone and takes the icon back out of `bar.layout`.
+
+One line survives it: the `{"id": "nosignal.hey-cal"}` entry in `plugins[]`
+described below. `omarchy plugin remove` clears the *first* entry it finds for a
+plugin, and this one has two, so it clears the bar icon and stops. The leftover
+is inert — the shell skips an entry whose plugin is not installed — but if you
+would rather the file were tidy:
+
+```sh
+cfg=~/.config/omarchy/shell.json
+jq 'del(.plugins[]? | select(.id == "nosignal.hey-cal"))' "$cfg" > "$cfg.tmp" &&
+  mv "$cfg.tmp" "$cfg"
+```
+
+Two more things removal can't clean up, because they aren't the plugin's to
+touch:
+
+- **The keybinding**, if you added one — that line is yours, in your
+  `bindings.lua`. Delete it or it will toggle a panel that is no longer there.
+- **`hey-cli`**, which you installed separately and may well be using outside
+  this plugin. `sudo rm /usr/local/bin/hey` if you want it gone, and
+  `hey auth logout` first to drop its keyring entry.
+
 ## Using it
 
 | Key | Does |
@@ -124,7 +161,8 @@ Worth knowing before you install anything that can read your mail:
   the keyboard shortcut working when the bar icon is not in the bar — without
   it, removing the icon silently kills the shortcut. It is idempotent, it adds
   only that one entry, it never removes anything, and it writes through a
-  temporary file. `omarchy plugin remove nosignal.hey-cal` clears it.
+  temporary file. Removing the plugin leaves this one line behind — see
+  [Removing it](#removing-it) for why, and the one command that clears it.
 - **Opening a row launches your browser**, whichever one you have set as
   default, through Omarchy's own `omarchy-launch-browser`. Only `https://` links
   are ever passed on.
