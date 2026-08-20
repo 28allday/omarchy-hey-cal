@@ -180,8 +180,10 @@ Worth knowing before you install anything that can read your mail:
   your HEY session belongs to `hey-cli` and is never read here. Where that
   session actually lives depends on your machine: `hey-cli` keeps it in the
   system keyring when one is available, but **falls back to a plaintext file**,
-  `~/.config/hey-cli/credentials.json` (created `0600`, with a warning on
-  stderr), when no keyring is reachable or `HEY_NO_KEYRING` is set. And because
+  `~/.config/hey-cli/credentials.json` (created `0600`), in two cases: when no
+  keyring is reachable — that one is announced with a warning on stderr — and
+  when `HEY_NO_KEYRING` is set, which switches to the plaintext file
+  **silently**, no warning at all. And because
   every `hey` command refreshes an expiring token automatically, even this
   plugin's read-only fetches can cause `hey-cli` to rewrite that file. If the
   plaintext fallback bothers you, make sure a Secret Service keyring is running
