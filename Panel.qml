@@ -58,6 +58,10 @@ Item {
   property int unreadCount: 0
   property bool mailLoaded: false
   property string mailError: ""   // "", "nojq", "nohey", "wronghey", "err"
+  // hey-cli fell back to storing the session in a plaintext file (no keyring
+  // reachable). Sticky once seen: the warning prints per process, and this
+  // panel is likely the only place a panel-only user would ever see it.
+  property bool plaintextCreds: false
 
   // Agenda state. events: the next eventLimit upcoming events, soonest first.
   // [{ day, time, title, cal, allDay, url }]
@@ -258,7 +262,14 @@ Item {
     // tagline, so it survives upstream rewording its own help text.
     "help=\"$(hey --help 2>&1)\"",
     "printf '%s' \"$help\" | grep -qw 'box' || { echo '##WRONGHEY'; exit 0; }",
-    "box=\"$(hey box imbox --json 2>/dev/null)\"",
+    // hey warns on stderr when it falls back to storing the session in a
+    // plaintext file (keyring unreachable). Swallowing that here would hide
+    // the one signal the disclosure promises, so capture stderr, surface
+    // the warning as a marker, and discard the rest as before.
+    "errf=\"$(mktemp)\"",
+    "box=\"$(hey box imbox --json 2>\"$errf\")\"",
+    "grep -q 'credentials stored in plaintext' \"$errf\" && echo '##PLAINTEXT'",
+    "rm -f \"$errf\"",
     "printf '%s' \"$box\" | jq -e '.ok == true and (.data | type == \"object\")' >/dev/null 2>&1 || { echo '##ERR'; exit 0; }",
     "printf '%s' \"$box\" | jq -c '(.data.postings // [])[] | {id: (.id | tostring), subject: (if ((.name // \"\") == \"\") then \"(no subject)\" else .name end), from: (.creator.name // .creator.email_address // \"Unknown\"), summary: ((.summary // \"\") | .[0:160]), seen: (.seen == true), at: (.active_at // .created_at // \"\"), count: (.visible_entry_count // 1), url: (.app_url // \"\")}' 2>/dev/null"
   ].join("\n")
@@ -275,6 +286,7 @@ Item {
       if (line === "##NOHEY") { error = "nohey"; continue }
       if (line === "##WRONGHEY") { error = "wronghey"; continue }
       if (line === "##ERR") { error = "err"; continue }
+      if (line === "##PLAINTEXT") { root.plaintextCreds = true; continue }
       try {
         var j = JSON.parse(line)
         if (!j || !j.id) continue
@@ -314,7 +326,12 @@ Item {
     "help=\"$(hey --help 2>&1)\"",
     "printf '%s' \"$help\" | grep -qw 'calendars' || { echo '##WRONGHEY'; exit 0; }",
     "printf '%s' \"$help\" | grep -qw 'recordings' || { echo '##WRONGHEY'; exit 0; }",
-    "cals=\"$(hey calendars --json 2>/dev/null)\"",
+    // Same stderr capture as the mail half — the plaintext-fallback warning
+    // must not be swallowed. Either fetch may run first, so both check.
+    "errf=\"$(mktemp)\"",
+    "cals=\"$(hey calendars --json 2>\"$errf\")\"",
+    "grep -q 'credentials stored in plaintext' \"$errf\" && echo '##PLAINTEXT'",
+    "rm -f \"$errf\"",
     "printf '%s' \"$cals\" | jq -e '.ok == true and (.data | type == \"array\")' >/dev/null 2>&1 || { echo '##ERR'; exit 0; }",
     "printf '%s' \"$cals\" | jq -r '.data[] | [(.id|tostring), (.name // \"Personal\")] | @tsv' | while IFS=\"$(printf '\\t')\" read -r id name; do",
     "hey recordings \"$id\" --json 2>/dev/null | jq -c --arg cal \"$name\" '(.data[\"Calendar::Event\"] // [])[] | {title: (.title // \"Untitled\"), starts: .starts_at, ends: .ends_at, allDay: (.all_day // false), cal: $cal, url: (.edit_url // \"\")}' 2>/dev/null",
@@ -350,6 +367,7 @@ Item {
       if (line === "##NOHEY") { error = "nohey"; continue }
       if (line === "##WRONGHEY") { error = "wronghey"; continue }
       if (line === "##ERR") { error = "err"; continue }
+      if (line === "##PLAINTEXT") { root.plaintextCreds = true; continue }
       try {
         var j = JSON.parse(line)
         if (!j || !j.starts) continue
@@ -975,6 +993,21 @@ Item {
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.caption
                 }
+              }
+
+              // hey-cli reported the plaintext-credentials fallback on this
+              // very fetch. Surfaced here because the panel discards stderr,
+              // and for a panel-only user this is the one place to learn it.
+              Text {
+                visible: root.plaintextCreds
+                width: rowsCol.width - root.rowPadH * 2
+                x: root.rowPadH
+                wrapMode: Text.Wrap
+                text: "No keyring reachable — your HEY session is stored in a plaintext file. See `hey doctor`."
+                color: root.urgent
+                opacity: 0.8
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
               }
             }
           }
